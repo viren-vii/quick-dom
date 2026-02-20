@@ -1,0 +1,9 @@
+export const QUICK_DOM_ID_ATTR = "data-quick-dom-id";
+export const STORE_VARIABLE_MENU_ID = "quick-dom-store-var";
+export const COPY_MENU_PARENT_ID = "quick-dom-copy-parent";
+export const COPY_OUTER_HTML_ID = "quick-dom-copy-html";
+export const COPY_SELECTOR_ID = "quick-dom-copy-sel";
+export const COPY_JS_PATH_ID = "quick-dom-copy-js";
+export const COPY_STYLES_ID = "quick-dom-copy-styles";
+export const COPY_XPATH_ID = "quick-dom-copy-xpath";
+export const COPY_FULL_XPATH_ID = "quick-dom-copy-full-xpath";
