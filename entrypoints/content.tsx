@@ -131,6 +131,34 @@ export default defineContentScript({
                 menuPos = null;
                 cleanupInspector();
               }}
+              onHighlight={(id) => {
+                if (id) {
+                  const el = document.querySelector(
+                    `[data-quick-dom-id="${id}"]`
+                  );
+                  if (el) {
+                    const r = el.getBoundingClientRect();
+                    renderInspector(
+                      true,
+                      r,
+                      el.tagName.toLowerCase(),
+                      menuCoords
+                    );
+                  }
+                } else {
+                  if (hoveredElement) {
+                    const r = hoveredElement.getBoundingClientRect();
+                    renderInspector(
+                      true,
+                      r,
+                      hoveredElement.tagName.toLowerCase(),
+                      menuCoords
+                    );
+                  } else {
+                    renderInspector(false, null, null, menuCoords);
+                  }
+                }
+              }}
             />
           )}
         </>

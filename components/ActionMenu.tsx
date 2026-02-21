@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { browser } from "wxt/browser";
 import {
   STORE_VARIABLE_MENU_ID,
   OBSERVE_ELEMENT_ID,
@@ -20,6 +21,8 @@ import {
   Eye,
   ChevronLeft,
   Info,
+  List,
+  Trash2,
 } from "lucide-react";
 
 interface ActionMenuProps {
@@ -28,6 +31,7 @@ interface ActionMenuProps {
   onClose: () => void;
   onAction: (actionId: string) => void;
   onObserve: (config: Record<string, boolean>) => void;
+  onHighlight?: (id: string | null) => void;
 }
 
 export const CATEGORY_INFO: Record<string, { desc: string; example: string }> =
@@ -80,9 +84,14 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
   onClose,
   onAction,
   onObserve,
+  onHighlight,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<"main" | "config">("main");
+  const [view, setView] = useState<"main" | "config" | "manage">("main");
+  const [activeObservers, setActiveObservers] = useState<
+    { id: string; descriptor: string }[]
+  >([]);
+  const [isLoadingObservers, setIsLoadingObservers] = useState(false);
   const [categories, setCategories] = useState<Record<string, boolean>>({
     Mouse: true,
     Keyboard: true,
@@ -120,6 +129,35 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     };
   }, [onClose]);
 
+  const fetchObservers = async () => {
+    setIsLoadingObservers(true);
+    try {
+      const response = await browser.runtime.sendMessage({
+        type: "GET_ACTIVE_OBSERVERS",
+      });
+      if (response && Array.isArray(response)) {
+        setActiveObservers(response);
+      }
+    } catch (err) {
+      console.error("Quick DOM: Failed to fetch observers", err);
+    } finally {
+      setIsLoadingObservers(false);
+    }
+  };
+
+  const handleDeleteObserver = async (id: string) => {
+    try {
+      await browser.runtime.sendMessage({
+        type: "STOP_OBSERVER",
+        observerId: id,
+      });
+      setActiveObservers((prev) => prev.filter((o) => o.id !== id));
+      if (onHighlight) onHighlight(null);
+    } catch (e) {
+      console.error("Quick DOM: Failed to delete observer", e);
+    }
+  };
+
   const actions = [
     {
       id: STORE_VARIABLE_MENU_ID,
@@ -132,6 +170,13 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
       label: "Observe Element",
       icon: <Eye size={14} />,
       color: "#A78BFA",
+    },
+    { type: "separator" },
+    {
+      id: "manage_observers",
+      label: "Manage Observers",
+      icon: <List size={14} />,
+      color: "#F472B6",
     },
     { type: "separator" },
     {
@@ -314,9 +359,14 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                   e.stopPropagation();
                   if (action.id === OBSERVE_ELEMENT_ID) {
                     setView("config");
-                  } else {
-                    onAction(action.id!);
+                    return;
                   }
+                  if (action.id === "manage_observers") {
+                    setView("manage");
+                    fetchObservers();
+                    return;
+                  }
+                  onAction(action.id!);
                 }}
                 style={{
                   display: "flex",
@@ -475,10 +525,130 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
+              width: "100%",
             }}
           >
             <Eye size={14} /> Start Observing
           </button>
+        </div>
+      )}
+
+      {view === "manage" && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            padding: "4px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              cursor: "pointer",
+              color: "#94A3B8",
+              marginBottom: "4px",
+            }}
+            onClick={() => {
+              setView("main");
+              if (onHighlight) onHighlight(null);
+            }}
+          >
+            <ChevronLeft size={16} />
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#F8FAFC",
+                marginLeft: "4px",
+              }}
+            >
+              Active Observers
+            </span>
+          </div>
+
+          <div
+            style={{
+              maxHeight: "220px",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+            }}
+          >
+            {isLoadingObservers ? (
+              <div
+                style={{
+                  color: "#94A3B8",
+                  fontSize: "12px",
+                  padding: "8px",
+                  textAlign: "center",
+                }}
+              >
+                Loading...
+              </div>
+            ) : activeObservers.length === 0 ? (
+              <div
+                style={{
+                  color: "#94A3B8",
+                  fontSize: "12px",
+                  padding: "8px",
+                  textAlign: "center",
+                }}
+              >
+                No active observers found.
+              </div>
+            ) : (
+              activeObservers.map((obs) => (
+                <div
+                  key={obs.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px",
+                    backgroundColor: "#1E293B",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                  }}
+                  onMouseEnter={() => onHighlight && onHighlight(obs.id)}
+                  onMouseLeave={() => onHighlight && onHighlight(null)}
+                >
+                  <span
+                    style={{
+                      color: "#E2E8F0",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      maxWidth: "135px",
+                      fontFamily: "monospace",
+                      fontSize: "11px",
+                    }}
+                    title={obs.descriptor}
+                  >
+                    {obs.descriptor}
+                  </span>
+                  <button
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#EF4444",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    onClick={() => handleDeleteObserver(obs.id)}
+                    title="Stop Observer"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

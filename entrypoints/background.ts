@@ -58,6 +58,49 @@ export default defineBackground(() => {
       storeElement(sender.tab.id, message.elementId);
     } else if (message.type === "INSPECTOR_OBSERVE_ELEMENT" && sender.tab?.id) {
       observeElementNode(sender.tab.id, message.elementId, message.config);
+    } else if (message.type === "GET_ACTIVE_OBSERVERS" && sender.tab?.id) {
+      return browser.scripting
+        .executeScript({
+          target: { tabId: sender.tab.id },
+          world: "MAIN",
+          func: () => {
+            const w = window as unknown as Record<string, unknown>;
+            const obs = w.quickDomObservers as Record<
+              string,
+              { id: string; descriptor: string }
+            >;
+            if (!obs) return [];
+            return Object.values(obs).map((o) => ({
+              id: o.id,
+              descriptor: o.descriptor,
+            }));
+          },
+        })
+        .then((injectionResults) => {
+          return injectionResults[0]?.result || [];
+        })
+        .catch((e) => {
+          console.error("Quick DOM: Error fetching active observers", e);
+          return [];
+        });
+    } else if (message.type === "STOP_OBSERVER" && sender.tab?.id) {
+      browser.scripting.executeScript({
+        target: { tabId: sender.tab.id },
+        world: "MAIN",
+        func: (obsId: string) => {
+          const w = window as unknown as Record<string, unknown>;
+          const obs = w.quickDomObservers as Record<
+            string,
+            { stop: () => void }
+          >;
+          if (obs && obs[obsId]) {
+            if (typeof obs[obsId].stop === "function") {
+              obs[obsId].stop();
+            }
+          }
+        },
+        args: [message.observerId],
+      });
     }
   });
 
@@ -203,7 +246,7 @@ export default defineBackground(() => {
 
           const w = window as unknown as Record<string, unknown>;
           if (!w.quickDomObservers) {
-            w.quickDomObservers = [];
+            w.quickDomObservers = {} as Record<string, unknown>;
           }
 
           const stopObserving = function () {
@@ -211,29 +254,53 @@ export default defineBackground(() => {
               element.removeEventListener(eventType, listener);
             });
             console.log(`✋ Stopped observing element:`, element);
+            element.removeAttribute("data-quick-dom-id");
+            const obs = w.quickDomObservers as Record<string, unknown>;
+            if (obs && obs[elementId]) {
+              delete obs[elementId];
+            }
           };
 
-          (w.quickDomObservers as Array<() => void>).push(stopObserving);
+          function getSelectorForDisplay(el: Element): string {
+            if (el.id) return `#${el.id}`;
+            let sel = el.tagName.toLowerCase();
+            if (el.className && typeof el.className === "string") {
+              const classes = el.className
+                .split(" ")
+                .filter(Boolean)
+                .map((c) => `.${c}`)
+                .join("");
+              if (classes) sel += classes;
+            }
+            return sel;
+          }
+
+          const descriptor = getSelectorForDisplay(element);
+
+          (w.quickDomObservers as Record<string, unknown>)[elementId] = {
+            id: elementId,
+            descriptor,
+            stop: stopObserving,
+          };
 
           // Attach a global helper to stop all
           if (!w.stopAllQuickDomObservers) {
             w.stopAllQuickDomObservers = function () {
               const obs = (window as unknown as Record<string, unknown>)
-                .quickDomObservers as Array<() => void>;
-              if (obs && obs.length > 0) {
-                obs.forEach((stop) => stop());
-                console.log(`Stopped ${obs.length} Quick DOM observers.`);
-                (
-                  window as unknown as Record<string, unknown>
-                ).quickDomObservers = [];
+                .quickDomObservers as Record<string, any>;
+              if (obs) {
+                const keys = Object.keys(obs);
+                keys.forEach((key) => {
+                  if (obs[key] && typeof obs[key].stop === "function") {
+                    obs[key].stop();
+                  }
+                });
+                console.log(`Stopped ${keys.length} Quick DOM observers.`);
               } else {
                 console.log("No active Quick DOM observers to stop.");
               }
             };
           }
-
-          // Clean up the tracking attribute
-          element.removeAttribute("data-quick-dom-id");
         }) as (...args: unknown[]) => void,
         args: [elementId, config],
       });
