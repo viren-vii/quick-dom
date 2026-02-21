@@ -19,6 +19,7 @@ import {
   Paintbrush2,
   Eye,
   ChevronLeft,
+  Info,
 } from "lucide-react";
 
 interface ActionMenuProps {
@@ -28,6 +29,50 @@ interface ActionMenuProps {
   onAction: (actionId: string) => void;
   onObserve: (config: Record<string, boolean>) => void;
 }
+
+export const CATEGORY_INFO: Record<string, { desc: string; example: string }> =
+  {
+    Mouse: {
+      desc: "Standard mouse interactions.",
+      example: "Clicking, double-clicking, right-clicking.",
+    },
+    Keyboard: {
+      desc: "Keyboard inputs.",
+      example: "Pressing or releasing a key.",
+    },
+    Form: {
+      desc: "Form element changes.",
+      example: "Typing in an input, submitting a form.",
+    },
+    Focus: {
+      desc: "Focus state changes.",
+      example: "Clicking into or tabbing out of an element.",
+    },
+    Touch: {
+      desc: "Touchscreen gestures.",
+      example: "Tapping or swiping on a mobile device.",
+    },
+    Drag: {
+      desc: "Drag and drop interactions.",
+      example: "Dragging an element or dropping it.",
+    },
+    Clipboard: {
+      desc: "Clipboard actions.",
+      example: "Copying, cutting, or pasting text.",
+    },
+    Animation: {
+      desc: "CSS animations & transitions.",
+      example: "An animation starting or ending.",
+    },
+    HighFrequency: {
+      desc: "Rapidly firing events.",
+      example: "Moving the mouse or scrolling.",
+    },
+    Other: {
+      desc: "Miscellaneous events.",
+      example: "Element resizing, loading, or errors.",
+    },
+  };
 
 export const ActionMenu: React.FC<ActionMenuProps> = ({
   x,
@@ -190,6 +235,42 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
           .qd-toggle:checked::after {
             transform: translateX(12px);
           }
+          .qd-tooltip-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+          }
+          .qd-tooltip-icon {
+            color: #64748B;
+          }
+          .qd-tooltip-container:hover .qd-tooltip-icon {
+            color: #94A3B8;
+          }
+          .qd-tooltip {
+            visibility: hidden;
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 170px;
+            background-color: #0F172A;
+            color: #E2E8F0;
+            text-align: left;
+            border-radius: 4px;
+            padding: 8px;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+            z-index: 2147483647;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            font-size: 11px;
+            line-height: 1.4;
+          }
+          .qd-tooltip-container:hover .qd-tooltip {
+            visibility: visible;
+            opacity: 1;
+          }
         `}
       </style>
 
@@ -316,14 +397,8 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             </span>
           </div>
 
-          <div style={{ fontSize: "11px", color: "#94A3B8", padding: "0 4px" }}>
-            Select event categories to observe:
-          </div>
-
           <div
             style={{
-              maxHeight: "200px",
-              overflowY: "auto",
               display: "flex",
               flexDirection: "column",
               gap: "2px",
@@ -342,7 +417,31 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                   fontSize: "12px",
                 }}
               >
-                <span style={{ color: "#E2E8F0" }}>{categoryName}</span>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                >
+                  <span style={{ color: "#E2E8F0" }}>{categoryName}</span>
+                  <div className="qd-tooltip-container">
+                    <Info size={12} className="qd-tooltip-icon" />
+                    <div className="qd-tooltip">
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          marginBottom: "4px",
+                          color: "#F8FAFC",
+                        }}
+                      >
+                        {categoryName} Events
+                      </div>
+                      <div style={{ marginBottom: "4px" }}>
+                        {CATEGORY_INFO[categoryName]?.desc}
+                      </div>
+                      <div style={{ color: "#94A3B8" }}>
+                        <i>e.g., {CATEGORY_INFO[categoryName]?.example}</i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <input
                   type="checkbox"
                   className="qd-toggle"
