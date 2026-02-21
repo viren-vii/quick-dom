@@ -53,13 +53,13 @@ export default defineBackground(() => {
   }
 
   // Handle messages from content script (e.g. from Inspector mode click)
-  browser.runtime.onMessage.addListener((message, sender) => {
+  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "INSPECTOR_STORE_ELEMENT" && sender.tab?.id) {
       storeElement(sender.tab.id, message.elementId);
     } else if (message.type === "INSPECTOR_OBSERVE_ELEMENT" && sender.tab?.id) {
       observeElementNode(sender.tab.id, message.elementId, message.config);
     } else if (message.type === "GET_ACTIVE_OBSERVERS" && sender.tab?.id) {
-      return browser.scripting
+      browser.scripting
         .executeScript({
           target: { tabId: sender.tab.id },
           world: "MAIN",
@@ -81,12 +81,13 @@ export default defineBackground(() => {
             "Quick DOM: Fetch Active Observers response:",
             injectionResults
           );
-          return injectionResults[0]?.result || [];
+          sendResponse(injectionResults[0]?.result || []);
         })
         .catch((e) => {
           console.error("Quick DOM: Error fetching active observers", e);
-          return [];
+          sendResponse([]);
         });
+      return true;
     } else if (message.type === "STOP_OBSERVER" && sender.tab?.id) {
       browser.scripting.executeScript({
         target: { tabId: sender.tab.id },
