@@ -1,4 +1,5 @@
 export const QUICK_DOM_ID_ATTR = "data-quick-dom-id";
+export const OBSERVE_ELEMENT_ID = "quick-dom-observe";
 export const STORE_VARIABLE_MENU_ID = "quick-dom-store-var";
 export const COPY_MENU_PARENT_ID = "quick-dom-copy-parent";
 export const COPY_OUTER_HTML_ID = "quick-dom-copy-html";

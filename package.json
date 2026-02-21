@@ -2,7 +2,7 @@
   "name": "quick-dom",
   "description": "Instantly store hovered or right-clicked elements as global console variables.",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "wxt",

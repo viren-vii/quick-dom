@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   STORE_VARIABLE_MENU_ID,
+  OBSERVE_ELEMENT_ID,
   COPY_OUTER_HTML_ID,
   COPY_SELECTOR_ID,
   COPY_JS_PATH_ID,
@@ -16,6 +17,8 @@ import {
   ListTree,
   FileJson2,
   Paintbrush2,
+  Eye,
+  ChevronLeft,
 } from "lucide-react";
 
 interface ActionMenuProps {
@@ -23,6 +26,10 @@ interface ActionMenuProps {
   y: number;
   onClose: () => void;
   onAction: (actionId: string) => void;
+  onObserve: (config: {
+    includeMouseMove: boolean;
+    includeScroll: boolean;
+  }) => void;
 }
 
 export const ActionMenu: React.FC<ActionMenuProps> = ({
@@ -30,8 +37,12 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
   y,
   onClose,
   onAction,
+  onObserve,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<"main" | "config">("main");
+  const [includeMouseMove, setIncludeMouseMove] = useState(false);
+  const [includeScroll, setIncludeScroll] = useState(false);
 
   // Close on outside click or Escape
   useEffect(() => {
@@ -63,6 +74,12 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
       label: "Store as global var",
       icon: <Terminal size={14} />,
       color: "#60A5FA",
+    },
+    {
+      id: OBSERVE_ELEMENT_ID,
+      label: "Observe Element",
+      icon: <Eye size={14} />,
+      color: "#A78BFA",
     },
     { type: "separator" },
     {
@@ -137,82 +154,224 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             from { opacity: 0; transform: scale(0.96) translateY(-4px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
           }
+          .qd-toggle {
+            appearance: none;
+            width: 28px;
+            height: 16px;
+            background: #334155;
+            border-radius: 16px;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            transition: background 0.2s;
+            flex-shrink: 0;
+          }
+          .qd-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 12px;
+            height: 12px;
+            background: #F8FAFC;
+            border-radius: 50%;
+            transition: transform 0.2s;
+          }
+          .qd-toggle:checked {
+            background: #60A5FA;
+          }
+          .qd-toggle:checked::after {
+            transform: translateX(12px);
+          }
         `}
       </style>
 
-      <div
-        style={{
-          padding: "6px 10px",
-          fontSize: "11px",
-          fontWeight: 600,
-          color: "#64748B", // Slate 500
-          textTransform: "uppercase",
-          letterSpacing: "0.5px",
-        }}
-      >
-        Quick DOM
-      </div>
-
-      {actions.map((action, idx) => {
-        if (action.type === "separator") {
-          return (
-            <div
-              key={`sep-${idx}`}
-              style={{
-                height: "1px",
-                backgroundColor: "#1E293B",
-                margin: "4px 0",
-              }}
-            />
-          );
-        }
-
-        return (
-          <button
-            key={action.id}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onAction(action.id!);
+      {view === "main" ? (
+        <>
+          <div
+            style={{
+              padding: "6px 10px",
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#64748B",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
             }}
+          >
+            Quick DOM
+          </div>
+
+          {actions.map((action, idx) => {
+            if (action.type === "separator") {
+              return (
+                <div
+                  key={`sep-${idx}`}
+                  style={{
+                    height: "1px",
+                    backgroundColor: "#1E293B",
+                    margin: "4px 0",
+                  }}
+                />
+              );
+            }
+
+            return (
+              <button
+                key={action.id}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (action.id === OBSERVE_ELEMENT_ID) {
+                    setView("config");
+                  } else {
+                    onAction(action.id!);
+                  }
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  width: "100%",
+                  padding: "8px 10px",
+                  backgroundColor: "transparent",
+                  border: "none",
+                  color: "#E2E8F0", // Slate 200
+                  fontFamily: "inherit",
+                  fontSize: "inherit",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  borderRadius: "4px",
+                  transition: "all 0.1s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#1E293B"; // Slate 800
+                  e.currentTarget.style.color = "#FFFFFF";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = "#E2E8F0";
+                }}
+              >
+                <span
+                  style={{
+                    color: action.color,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  {action.icon}
+                </span>
+                {action.label}
+              </button>
+            );
+          })}
+        </>
+      ) : (
+        <div
+          style={{
+            padding: "4px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
-              width: "100%",
-              padding: "8px 10px",
-              backgroundColor: "transparent",
-              border: "none",
-              color: "#E2E8F0", // Slate 200
-              fontFamily: "inherit",
-              fontSize: "inherit",
-              textAlign: "left",
-              cursor: "pointer",
-              borderRadius: "4px",
-              transition: "all 0.1s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#1E293B"; // Slate 800
-              e.currentTarget.style.color = "#FFFFFF";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "#E2E8F0";
+              paddingBottom: "6px",
+              borderBottom: "1px solid #1E293B",
             }}
           >
-            <span
+            <button
+              onClick={() => setView("main")}
               style={{
-                color: action.color,
+                background: "transparent",
+                border: "none",
+                color: "#94A3B8",
+                cursor: "pointer",
+                padding: "4px",
                 display: "flex",
                 alignItems: "center",
               }}
             >
-              {action.icon}
+              <ChevronLeft size={16} />
+            </button>
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#F8FAFC",
+                marginLeft: "4px",
+              }}
+            >
+              Observer Options
             </span>
-            {action.label}
+          </div>
+
+          <div style={{ fontSize: "11px", color: "#94A3B8", padding: "0 4px" }}>
+            Standard events (Click, Keyboard, Form) are always recorded.
+          </div>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "4px",
+              cursor: "pointer",
+              fontSize: "12px",
+            }}
+          >
+            <span style={{ color: "#E2E8F0" }}>Mouse Move</span>
+            <input
+              type="checkbox"
+              className="qd-toggle"
+              checked={includeMouseMove}
+              onChange={(e) => setIncludeMouseMove(e.target.checked)}
+            />
+          </label>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "4px",
+              cursor: "pointer",
+              fontSize: "12px",
+            }}
+          >
+            <span style={{ color: "#E2E8F0" }}>Scrolling</span>
+            <input
+              type="checkbox"
+              className="qd-toggle"
+              checked={includeScroll}
+              onChange={(e) => setIncludeScroll(e.target.checked)}
+            />
+          </label>
+
+          <button
+            onClick={() => onObserve({ includeMouseMove, includeScroll })}
+            style={{
+              marginTop: "4px",
+              padding: "8px",
+              background: "#3B82F6",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+            }}
+          >
+            <Eye size={14} /> Start Observing
           </button>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
 };

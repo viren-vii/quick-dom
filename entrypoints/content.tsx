@@ -84,6 +84,19 @@ export default defineContentScript({
                 menuPos = null;
                 cleanupInspector();
               }}
+              onObserve={(config) => {
+                if (hoveredElement) {
+                  const id = generateRandomId();
+                  tagElementWithId(hoveredElement, id);
+                  browser.runtime.sendMessage({
+                    type: "INSPECTOR_OBSERVE_ELEMENT",
+                    elementId: id,
+                    config,
+                  });
+                }
+                menuPos = null;
+                cleanupInspector();
+              }}
             />
           )}
         </>
