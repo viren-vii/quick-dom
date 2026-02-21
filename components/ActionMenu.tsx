@@ -135,6 +135,10 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
       const response = await browser.runtime.sendMessage({
         type: "GET_ACTIVE_OBSERVERS",
       });
+      console.log(
+        "Quick DOM: ActionMenu fetch response from background:",
+        response
+      );
       if (response && Array.isArray(response)) {
         setActiveObservers(response);
       }

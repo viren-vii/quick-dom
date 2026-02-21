@@ -77,6 +77,10 @@ export default defineBackground(() => {
           },
         })
         .then((injectionResults) => {
+          console.log(
+            "Quick DOM: Fetch Active Observers response:",
+            injectionResults
+          );
           return injectionResults[0]?.result || [];
         })
         .catch((e) => {
