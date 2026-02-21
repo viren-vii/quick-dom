@@ -157,7 +157,13 @@ export default defineContentScript({
 
       const target = e.target as HTMLElement;
       // Ignore our own overlay container if it somehow catches events
-      if (inspectorContainer?.contains(target)) return;
+      if (
+        target.id === "quick-dom-inspector-host" ||
+        (inspectorContainer && e.composedPath().includes(inspectorContainer)) ||
+        target.id === "quick-dom-toast-host"
+      ) {
+        return;
+      }
 
       hoveredElement = target;
 
