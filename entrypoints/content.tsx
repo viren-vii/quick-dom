@@ -37,8 +37,19 @@ export default defineContentScript({
 
     function showToast(message: string) {
       if (!toastContainer) {
+        const host = document.createElement("div");
+        host.id = "quick-dom-toast-host";
+        host.style.position = "fixed";
+        host.style.zIndex = "2147483647";
+        host.style.top = "0";
+        host.style.left = "0";
+        host.style.width = "100%";
+        host.style.pointerEvents = "none"; // Let clicks pass through if anything misses Toast
+        document.body.appendChild(host);
+
+        const shadow = host.attachShadow({ mode: "open" });
         toastContainer = document.createElement("div");
-        document.body.appendChild(toastContainer);
+        shadow.appendChild(toastContainer);
         toastRoot = ReactDOM.createRoot(toastContainer);
       }
 
@@ -48,7 +59,12 @@ export default defineContentScript({
           onClose={() => {
             toastRoot?.unmount();
             if (toastContainer && toastContainer.parentNode) {
-              toastContainer.parentNode.removeChild(toastContainer);
+              // toastContainer's parentNode is the shadow root.
+              // We should instead remove the host.
+              const host = (toastContainer.parentNode as ShadowRoot).host;
+              if (host && host.parentNode) {
+                host.parentNode.removeChild(host);
+              }
             }
             toastRoot = null;
             toastContainer = null;
@@ -64,8 +80,22 @@ export default defineContentScript({
       menuCoords: { x: number; y: number } | null = null
     ) {
       if (!inspectorContainer) {
+        const host = document.createElement("div");
+        host.id = "quick-dom-inspector-host";
+        host.style.position = "absolute";
+        host.style.top = "0";
+        host.style.left = "0";
+        host.style.width = "100%";
+        host.style.height = "100%";
+        host.style.zIndex = "2147483646";
+        host.style.pointerEvents = "none"; // Crucial so we can still hover page elements
+        document.body.appendChild(host);
+
+        const shadow = host.attachShadow({ mode: "open" });
         inspectorContainer = document.createElement("div");
-        document.body.appendChild(inspectorContainer);
+        inspectorContainer.style.pointerEvents = "auto"; // Re-enable pointer events for UI menu
+
+        shadow.appendChild(inspectorContainer);
         inspectorRoot = ReactDOM.createRoot(inspectorContainer);
       }
       inspectorRoot?.render(
@@ -111,7 +141,12 @@ export default defineContentScript({
       document.body.style.cursor = "default";
       if (inspectorRoot) {
         inspectorRoot.unmount();
-        inspectorContainer?.remove();
+        if (inspectorContainer && inspectorContainer.parentNode) {
+          const host = (inspectorContainer.parentNode as ShadowRoot).host;
+          if (host && host.parentNode) {
+            host.parentNode.removeChild(host);
+          }
+        }
         inspectorRoot = null;
         inspectorContainer = null;
       }
