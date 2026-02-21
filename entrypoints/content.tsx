@@ -37,13 +37,15 @@ export default defineContentScript({
 
     function showToast(message: string) {
       if (!toastContainer) {
-        const host = document.createElement("div");
+        const host = document.createElement("quick-dom-root");
         host.id = "quick-dom-toast-host";
+        host.style.all = "initial";
         host.style.position = "fixed";
         host.style.zIndex = "2147483647";
         host.style.top = "0";
         host.style.left = "0";
         host.style.width = "100%";
+        host.style.background = "transparent";
         host.style.pointerEvents = "none"; // Let clicks pass through if anything misses Toast
         document.body.appendChild(host);
 
@@ -80,14 +82,16 @@ export default defineContentScript({
       menuCoords: { x: number; y: number } | null = null
     ) {
       if (!inspectorContainer) {
-        const host = document.createElement("div");
+        const host = document.createElement("quick-dom-root");
         host.id = "quick-dom-inspector-host";
+        host.style.all = "initial";
         host.style.position = "absolute";
         host.style.top = "0";
         host.style.left = "0";
         host.style.width = "100%";
         host.style.height = "100%";
         host.style.zIndex = "2147483646";
+        host.style.background = "transparent";
         host.style.pointerEvents = "none"; // Crucial so we can still hover page elements
         document.body.appendChild(host);
 
