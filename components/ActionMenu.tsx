@@ -26,10 +26,7 @@ interface ActionMenuProps {
   y: number;
   onClose: () => void;
   onAction: (actionId: string) => void;
-  onObserve: (config: {
-    includeMouseMove: boolean;
-    includeScroll: boolean;
-  }) => void;
+  onObserve: (config: Record<string, boolean>) => void;
 }
 
 export const ActionMenu: React.FC<ActionMenuProps> = ({
@@ -41,8 +38,18 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<"main" | "config">("main");
-  const [includeMouseMove, setIncludeMouseMove] = useState(false);
-  const [includeScroll, setIncludeScroll] = useState(false);
+  const [categories, setCategories] = useState<Record<string, boolean>>({
+    Mouse: true,
+    Keyboard: true,
+    Form: true,
+    Focus: true,
+    Touch: true,
+    Drag: true,
+    Clipboard: true,
+    Animation: true,
+    HighFrequency: false,
+    Other: true,
+  });
 
   // Close on outside click or Escape
   useEffect(() => {
@@ -310,49 +317,49 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
           </div>
 
           <div style={{ fontSize: "11px", color: "#94A3B8", padding: "0 4px" }}>
-            Standard events (Click, Keyboard, Form) are always recorded.
+            Select event categories to observe:
           </div>
 
-          <label
+          <div
             style={{
+              maxHeight: "200px",
+              overflowY: "auto",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "4px",
-              cursor: "pointer",
-              fontSize: "12px",
+              flexDirection: "column",
+              gap: "2px",
+              paddingRight: "4px",
             }}
           >
-            <span style={{ color: "#E2E8F0" }}>Mouse Move</span>
-            <input
-              type="checkbox"
-              className="qd-toggle"
-              checked={includeMouseMove}
-              onChange={(e) => setIncludeMouseMove(e.target.checked)}
-            />
-          </label>
-
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "4px",
-              cursor: "pointer",
-              fontSize: "12px",
-            }}
-          >
-            <span style={{ color: "#E2E8F0" }}>Scrolling</span>
-            <input
-              type="checkbox"
-              className="qd-toggle"
-              checked={includeScroll}
-              onChange={(e) => setIncludeScroll(e.target.checked)}
-            />
-          </label>
+            {Object.keys(categories).map((categoryName) => (
+              <label
+                key={categoryName}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "4px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                }}
+              >
+                <span style={{ color: "#E2E8F0" }}>{categoryName}</span>
+                <input
+                  type="checkbox"
+                  className="qd-toggle"
+                  checked={categories[categoryName]}
+                  onChange={(e) =>
+                    setCategories((prev) => ({
+                      ...prev,
+                      [categoryName]: e.target.checked,
+                    }))
+                  }
+                />
+              </label>
+            ))}
+          </div>
 
           <button
-            onClick={() => onObserve({ includeMouseMove, includeScroll })}
+            onClick={() => onObserve(categories)}
             style={{
               marginTop: "4px",
               padding: "8px",

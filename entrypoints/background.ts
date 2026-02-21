@@ -64,16 +64,13 @@ export default defineBackground(() => {
   async function observeElementNode(
     tabId: number,
     elementId: string,
-    config: { includeMouseMove: boolean; includeScroll: boolean }
+    config: Record<string, boolean>
   ) {
     try {
       await browser.scripting.executeScript({
         target: { tabId },
         world: "MAIN",
-        func: ((
-          elId: string,
-          options: { includeMouseMove: boolean; includeScroll: boolean }
-        ) => {
+        func: ((elId: string, options: Record<string, boolean>) => {
           const element = document.querySelector(
             `[data-quick-dom-id="${elId}"]`
           );
@@ -116,59 +113,56 @@ export default defineBackground(() => {
             return data;
           }
 
-          const { includeMouseMove = false, includeScroll = false } = options;
-          const eventTypes = [
-            "click",
-            "dblclick",
-            "mousedown",
-            "mouseup",
-            "mouseover",
-            "mouseout",
-            "mouseenter",
-            "mouseleave",
-            "contextmenu",
-            "touchstart",
-            "touchend",
-            "touchmove",
-            "touchcancel",
-            "keydown",
-            "keyup",
-            "keypress",
-            "focus",
-            "blur",
-            "focusin",
-            "focusout",
-            "input",
-            "change",
-            "submit",
-            "reset",
-            "invalid",
-            "drag",
-            "dragstart",
-            "dragend",
-            "dragover",
-            "dragenter",
-            "dragleave",
-            "drop",
-            "copy",
-            "cut",
-            "paste",
-            "animationstart",
-            "animationend",
-            "animationiteration",
-            "transitionstart",
-            "transitionend",
-            "transitionrun",
-            "transitioncancel",
-            "wheel",
-            "select",
-            "load",
-            "error",
-            "resize",
-          ];
+          const OBSERVER_CATEGORIES: Record<string, string[]> = {
+            Mouse: [
+              "click",
+              "dblclick",
+              "mousedown",
+              "mouseup",
+              "mouseover",
+              "mouseout",
+              "mouseenter",
+              "mouseleave",
+              "contextmenu",
+            ],
+            Keyboard: ["keydown", "keyup", "keypress"],
+            Form: ["input", "change", "submit", "reset", "invalid"],
+            Focus: ["focus", "blur", "focusin", "focusout"],
+            Touch: ["touchstart", "touchend", "touchmove", "touchcancel"],
+            Drag: [
+              "drag",
+              "dragstart",
+              "dragend",
+              "dragover",
+              "dragenter",
+              "dragleave",
+              "drop",
+            ],
+            Clipboard: ["copy", "cut", "paste"],
+            Animation: [
+              "animationstart",
+              "animationend",
+              "animationiteration",
+              "transitionstart",
+              "transitionend",
+              "transitionrun",
+              "transitioncancel",
+            ],
+            HighFrequency: ["mousemove", "scroll", "wheel"],
+            Other: ["select", "load", "error", "resize"],
+          };
 
-          if (includeMouseMove) eventTypes.push("mousemove");
-          if (includeScroll) eventTypes.push("scroll");
+          const eventCategoryMap: Record<string, string> = {};
+          const eventTypes: string[] = [];
+
+          Object.entries(options).forEach(([category, isEnabled]) => {
+            if (isEnabled && OBSERVER_CATEGORIES[category]) {
+              OBSERVER_CATEGORIES[category].forEach((evt) => {
+                eventTypes.push(evt);
+                eventCategoryMap[evt] = category;
+              });
+            }
+          });
 
           const listeners: Array<{
             eventType: string;
@@ -177,13 +171,28 @@ export default defineBackground(() => {
 
           eventTypes.forEach((eventType) => {
             const listener = (e: Event) => {
-              console.log(`[${new Date().toISOString()}] Event: ${eventType}`, {
+              const category = eventCategoryMap[eventType] || "Other";
+              let hash = 0;
+              for (let i = 0; i < category.length; i++) {
+                hash = category.charCodeAt(i) + ((hash << 5) - hash);
+              }
+              const hue = Math.abs(hash) % 360;
+              const color = `hsl(${hue}, 70%, 50%)`;
+
+              const logData = {
                 type: e.type,
                 target: e.target,
                 currentTarget: e.currentTarget,
                 detail: (e as UIEvent).detail,
                 ...getEventSpecificData(e as Event & Record<string, unknown>),
-              });
+              };
+
+              console.log(
+                `%c[${category}] %c${eventType}`,
+                `color: ${color}; font-weight: bold;`,
+                "color: inherit; font-weight: normal;",
+                logData
+              );
             };
             element.addEventListener(eventType, listener);
             listeners.push({ eventType, listener });
