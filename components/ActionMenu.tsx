@@ -198,6 +198,9 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
         flexDirection: "column",
         gap: "2px",
         animation: "quickDomMenuIn 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
+        isolation: "isolate",
+        opacity: 1,
+        backdropFilter: "blur(10px)",
       }}
     >
       <style>
