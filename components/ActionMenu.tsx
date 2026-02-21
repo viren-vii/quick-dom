@@ -87,7 +87,8 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
   onHighlight,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<"main" | "config" | "manage">("main");
+  const [view, setView] = useState<"main" | "config">("main");
+  const [showManageList, setShowManageList] = useState(false);
   const [activeObservers, setActiveObservers] = useState<
     { id: string; descriptor: string }[]
   >([]);
@@ -135,10 +136,6 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
       const response = await browser.runtime.sendMessage({
         type: "GET_ACTIVE_OBSERVERS",
       });
-      console.log(
-        "Quick DOM: ActionMenu fetch response from background:",
-        response
-      );
       if (response && Array.isArray(response)) {
         setActiveObservers(response);
       }
@@ -443,43 +440,6 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             </span>
           </div>
 
-          <button
-            disabled={activeObservers.length === 0}
-            onClick={() => {
-              setView("manage");
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "8px",
-              background: "#1E293B",
-              border: "1px solid #334155",
-              borderRadius: "4px",
-              color: activeObservers.length > 0 ? "#F472B6" : "#475569",
-              cursor: activeObservers.length > 0 ? "pointer" : "not-allowed",
-              fontWeight: 500,
-              fontSize: "12px",
-              outline: "none",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <List size={14} /> Manage Active
-            </div>
-            <div
-              style={{
-                background: activeObservers.length > 0 ? "#F472B6" : "#334155",
-                color: activeObservers.length > 0 ? "#111827" : "#64748B",
-                borderRadius: "10px",
-                padding: "1px 6px",
-                fontSize: "10px",
-                fontWeight: "bold",
-              }}
-            >
-              {isLoadingObservers ? "..." : activeObservers.length}
-            </div>
-          </button>
-
           <div
             style={{
               display: "flex",
@@ -560,125 +520,138 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
           >
             <Eye size={14} /> Start Observing
           </button>
-        </div>
-      )}
 
-      {view === "manage" && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            padding: "4px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              cursor: "pointer",
-              color: "#94A3B8",
-              marginBottom: "4px",
-            }}
-            onClick={() => {
-              setView("main");
-              if (onHighlight) onHighlight(null);
-            }}
-          >
-            <ChevronLeft size={16} />
-            <span
+          {activeObservers.length > 0 && (
+            <div
               style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#F8FAFC",
-                marginLeft: "4px",
+                marginTop: "4px",
+                paddingTop: "4px",
+                borderTop: "1px solid #1E293B",
               }}
             >
-              Active Observers
-            </span>
-          </div>
-
-          <div
-            style={{
-              maxHeight: "220px",
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: "4px",
-            }}
-          >
-            {isLoadingObservers ? (
-              <div
+              <button
+                onClick={() => setShowManageList((prev) => !prev)}
                 style={{
-                  color: "#94A3B8",
-                  fontSize: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                   padding: "8px",
-                  textAlign: "center",
+                  background: showManageList ? "#0F172A" : "transparent",
+                  border: showManageList
+                    ? "1px solid #334155"
+                    : "1px solid transparent",
+                  borderRadius: "4px",
+                  color: "#F472B6",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  fontSize: "12px",
+                  outline: "none",
+                  width: "100%",
+                  transition: "background 0.2s, border 0.2s",
                 }}
               >
-                Loading...
-              </div>
-            ) : activeObservers.length === 0 ? (
-              <div
-                style={{
-                  color: "#94A3B8",
-                  fontSize: "12px",
-                  padding: "8px",
-                  textAlign: "center",
-                }}
-              >
-                No active observers found.
-              </div>
-            ) : (
-              activeObservers.map((obs) => (
                 <div
-                  key={obs.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "6px",
-                    backgroundColor: "#1E293B",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                  }}
-                  onMouseEnter={() => onHighlight && onHighlight(obs.id)}
-                  onMouseLeave={() => onHighlight && onHighlight(null)}
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
                 >
-                  <span
-                    style={{
-                      color: "#E2E8F0",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      maxWidth: "135px",
-                      fontFamily: "monospace",
-                      fontSize: "11px",
-                    }}
-                    title={obs.descriptor}
-                  >
-                    {obs.descriptor}
-                  </span>
-                  <button
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: "#EF4444",
-                      cursor: "pointer",
-                      padding: "4px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                    onClick={() => handleDeleteObserver(obs.id)}
-                    title="Stop Observer"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <List size={14} /> Manage Active
                 </div>
-              ))
-            )}
-          </div>
+                <div
+                  style={{
+                    background: "#F472B6",
+                    color: "#111827",
+                    borderRadius: "10px",
+                    padding: "1px 6px",
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {isLoadingObservers ? "..." : activeObservers.length}
+                </div>
+              </button>
+
+              {showManageList && (
+                <div
+                  style={{
+                    marginTop: "6px",
+                    maxHeight: "150px",
+                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
+                    padding: "4px",
+                    background: "#0F172A",
+                    border: "1px solid #1E293B",
+                    borderRadius: "4px",
+                  }}
+                >
+                  {isLoadingObservers ? (
+                    <div
+                      style={{
+                        color: "#94A3B8",
+                        fontSize: "12px",
+                        padding: "8px",
+                        textAlign: "center",
+                      }}
+                    >
+                      Loading...
+                    </div>
+                  ) : (
+                    activeObservers.map((obs) => (
+                      <div
+                        key={obs.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "6px",
+                          backgroundColor: "#1E293B",
+                          borderRadius: "4px",
+                          fontSize: "12px",
+                        }}
+                        onMouseEnter={() => onHighlight && onHighlight(obs.id)}
+                        onMouseLeave={() => onHighlight && onHighlight(null)}
+                      >
+                        <span
+                          style={{
+                            color: "#E2E8F0",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "135px",
+                            fontFamily: "monospace",
+                            fontSize: "11px",
+                          }}
+                          title={obs.descriptor}
+                        >
+                          {obs.descriptor}
+                        </span>
+                        <button
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "#EF4444",
+                            cursor: "pointer",
+                            padding: "4px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          onClick={() => {
+                            handleDeleteObserver(obs.id);
+                            // It will auto-hide when activeObservers length hits 0
+                            // because of the outer activeObservers.length > 0 constraint
+                          }}
+                          title="Stop Observer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
