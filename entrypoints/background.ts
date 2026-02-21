@@ -258,8 +258,8 @@ export default defineBackground(() => {
             console.log(`✋ Stopped observing element:`, element);
             element.removeAttribute("data-quick-dom-id");
             const obs = w.quickDomObservers as Record<string, unknown>;
-            if (obs && obs[elementId]) {
-              delete obs[elementId];
+            if (obs && obs[elId]) {
+              delete obs[elId];
             }
           };
 
@@ -279,8 +279,8 @@ export default defineBackground(() => {
 
           const descriptor = getSelectorForDisplay(element);
 
-          (w.quickDomObservers as Record<string, unknown>)[elementId] = {
-            id: elementId,
+          (w.quickDomObservers as Record<string, unknown>)[elId] = {
+            id: elId,
             descriptor,
             stop: stopObserving,
           };
