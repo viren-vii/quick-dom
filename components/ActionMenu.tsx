@@ -173,13 +173,6 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     },
     { type: "separator" },
     {
-      id: "manage_observers",
-      label: "Manage Observers",
-      icon: <List size={14} />,
-      color: "#F472B6",
-    },
-    { type: "separator" },
-    {
       id: COPY_OUTER_HTML_ID,
       label: "Copy element",
       icon: <Code size={14} />,
@@ -359,10 +352,6 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                   e.stopPropagation();
                   if (action.id === OBSERVE_ELEMENT_ID) {
                     setView("config");
-                    return;
-                  }
-                  if (action.id === "manage_observers") {
-                    setView("manage");
                     fetchObservers();
                     return;
                   }
@@ -449,6 +438,43 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
               Observer Options
             </span>
           </div>
+
+          <button
+            disabled={activeObservers.length === 0}
+            onClick={() => {
+              setView("manage");
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "8px",
+              background: "#1E293B",
+              border: "1px solid #334155",
+              borderRadius: "4px",
+              color: activeObservers.length > 0 ? "#F472B6" : "#475569",
+              cursor: activeObservers.length > 0 ? "pointer" : "not-allowed",
+              fontWeight: 500,
+              fontSize: "12px",
+              outline: "none",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <List size={14} /> Manage Active
+            </div>
+            <div
+              style={{
+                background: activeObservers.length > 0 ? "#F472B6" : "#334155",
+                color: activeObservers.length > 0 ? "#111827" : "#64748B",
+                borderRadius: "10px",
+                padding: "1px 6px",
+                fontSize: "10px",
+                fontWeight: "bold",
+              }}
+            >
+              {isLoadingObservers ? "..." : activeObservers.length}
+            </div>
+          </button>
 
           <div
             style={{

@@ -222,13 +222,15 @@ export default defineBackground(() => {
               const hue = Math.abs(hash) % 360;
               const color = `hsl(${hue}, 70%, 50%)`;
 
-              const logData = {
-                type: e.type,
-                target: e.target,
-                currentTarget: e.currentTarget,
-                detail: (e as UIEvent).detail,
-                ...getEventSpecificData(e as Event & Record<string, unknown>),
-              };
+              const logData = Object.assign(
+                {
+                  type: e.type,
+                  target: e.target,
+                  currentTarget: e.currentTarget,
+                  detail: (e as UIEvent).detail,
+                },
+                getEventSpecificData(e as Event & Record<string, unknown>)
+              );
 
               console.log(
                 `%c[${category}] %c${eventType}`,
